@@ -186,28 +186,7 @@ setup_limits_for_all_users() {
     read -p "Nhập giới hạn tốc độ (Mbps) cho tất cả user (để trống nếu không muốn thiết lập): " speed_limit
     
     # Lấy giới hạn dữ liệu
-    read -p "Nhập giới hạn dữ liệu cho tất cả user (để trống nếu không muốn thiết lập): " data_limit
-    
-    # Lấy đơn vị cho giới hạn dữ liệu
-    local data_unit="GB"
-    if [[ -n "$data_limit" ]]; then
-        read -p "Nhập đơn vị giới hạn dữ liệu (MB/GB, mặc định GB): " data_unit
-        
-        # Nếu không nhập đơn vị, mặc định là GB
-        if [[ -z "$data_unit" ]]; then
-            data_unit="GB"
-        fi
-        
-        # Chuyển đơn vị về chữ hoa
-        data_unit=$(echo "$data_unit" | tr '[:lower:]' '[:upper:]')
-        
-        # Kiểm tra đơn vị hợp lệ
-        if [[ "$data_unit" != "MB" ]] && [[ "$data_unit" != "GB" ]]; then
-            error_message "Đơn vị không hợp lệ. Chỉ chấp nhận MB hoặc GB"
-            data_unit="GB"
-            warning_message "Sử dụng đơn vị mặc định: GB"
-        fi
-    fi
+    read -p "Nhập giới hạn dữ liệu (MB) cho tất cả user (để trống nếu không muốn thiết lập): " data_limit
     
     # Lấy giao diện mạng
     local interface=$(ip -o -4 route show to default | awk '{print $5}')
@@ -224,8 +203,8 @@ setup_limits_for_all_users() {
         fi
         
         # Thiết lập giới hạn dữ liệu nếu có
-        if [[ -n "$data_limit" ]] && is_valid_number "$data_limit" 0.1; then
-            set_user_data_limit "$username" "$data_limit" "$data_unit"
+        if [[ -n "$data_limit" ]] && is_valid_number "$data_limit" 1; then
+            set_user_data_limit "$username" "$data_limit"
         fi
     done
     
