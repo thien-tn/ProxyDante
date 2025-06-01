@@ -21,6 +21,8 @@ source "$(dirname "$0")/lib/install_dante.sh"
 source "$(dirname "$0")/lib/setup_service.sh"
 source "$(dirname "$0")/lib/user_management.sh"
 source "$(dirname "$0")/lib/limit_speed.sh"
+source "$(dirname "$0")/lib/data_limit.sh"
+source "$(dirname "$0")/lib/limit_manager.sh"
 source "$(dirname "$0")/lib/uninstall.sh"
 
 # Hiển thị banner
@@ -47,15 +49,17 @@ show_main_menu() {
         echo -e "${CYAN}  3)${NC} Thêm ngẫu nhiên nhiều proxy"
         echo -e "${CYAN}  4)${NC} Xóa một proxy user"
         echo -e "${CYAN}  5)${NC} Xóa toàn bộ proxy user"
-        echo -e "${CYAN}  6)${NC} Thay đổi giới hạn tốc độ proxy"
-        echo -e "${CYAN}  7)${NC} Xuất danh sách proxy"
-        echo -e "${CYAN}  8)${NC} Kiểm tra trạng thái dịch vụ"
-        echo -e "${CYAN}  9)${NC} Khởi động lại dịch vụ"
-        echo -e "${RED} 10)${NC} Xóa toàn bộ cấu hình server proxy & user"
-        echo -e "${CYAN} 11)${NC} Thoát"
+        echo -e "${CYAN}  6)${NC} Quản lý giới hạn proxy"
+        echo -e "${CYAN}  7)${NC} Thay đổi giới hạn tốc độ proxy"
+        echo -e "${CYAN}  8)${NC} Thay đổi giới hạn dữ liệu proxy"
+        echo -e "${CYAN}  9)${NC} Xuất danh sách proxy"
+        echo -e "${CYAN} 10)${NC} Kiểm tra trạng thái dịch vụ"
+        echo -e "${CYAN} 11)${NC} Khởi động lại dịch vụ"
+        echo -e "${RED} 12)${NC} Xóa toàn bộ cấu hình server proxy & user"
+        echo -e "${CYAN} 13)${NC} Thoát"
         echo ""
         
-        read -p "Chọn một tùy chọn [1-11]: " option
+        read -p "Chọn một tùy chọn [1-13]: " option
         
         case $option in
             1) list_proxy_users ;;
@@ -63,12 +67,14 @@ show_main_menu() {
             3) add_random_proxies ;;
             4) delete_proxy_user ;;
             5) delete_all_proxy_users ;;
-            6) change_speed_limit ;;
-            7) export_proxy_list ;;
-            8) check_service_status ;;
-            9) restart_service ;;
-            10) uninstall_dante ;;
-            11) 
+            6) show_limit_manager_menu ;;
+            7) change_speed_limit ;;
+            8) change_data_limit ;;
+            9) export_proxy_list ;;
+            10) check_service_status ;;
+            11) restart_service ;;
+            12) uninstall_dante ;;
+            13) 
                 echo "Đang thoát..."
                 exit 0 
                 ;;
