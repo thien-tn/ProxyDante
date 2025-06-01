@@ -103,10 +103,12 @@ update_user_data_usage() {
 
 # Thiết lập giới hạn lượng dữ liệu cho user
 # $1: Tên user
-# $2: Giới hạn dữ liệu (GB)
+# $2: Giới hạn dữ liệu (số)
+# $3: Đơn vị (MB hoặc GB, mặc định là GB)
 set_user_data_limit() {
     local username=$1
     local limit=$2
+    local unit=${3:-"GB"}
     
     # Kiểm tra user tồn tại
     if ! user_exists "$username"; then
@@ -115,18 +117,25 @@ set_user_data_limit() {
     fi
     
     # Kiểm tra giới hạn dữ liệu hợp lệ
-    if ! is_valid_number "$limit" 1; then
+    if ! is_valid_number "$limit" 0.1; then
         error_message "Giới hạn dữ liệu không hợp lệ"
         return 2
+    fi
+    
+    # Kiểm tra đơn vị hợp lệ
+    if [[ "$unit" != "MB" ]] && [[ "$unit" != "GB" ]]; then
+        error_message "Đơn vị không hợp lệ. Chỉ chấp nhận MB hoặc GB"
+        return 3
     fi
     
     # Cập nhật giới hạn dữ liệu vào cơ sở dữ liệu
     jq --arg username "$username" \
        --argjson limit "$limit" \
-       '.users[$username] = {"limit": $limit}' \
+       --arg unit "$unit" \
+       '.users[$username] = {"limit": $limit, "unit": $unit}' \
        "$DATA_LIMIT_DB" > "${DATA_LIMIT_DB}.tmp" && mv "${DATA_LIMIT_DB}.tmp" "$DATA_LIMIT_DB"
     
-    success_message "Đã thiết lập giới hạn dữ liệu ${limit}GB cho user $username"
+    success_message "Đã thiết lập giới hạn dữ liệu ${limit}${unit} cho user $username"
     
     # Thiết lập iptables để theo dõi lưu lượng
     setup_user_data_tracking "$username"
@@ -217,16 +226,27 @@ check_and_apply_data_limits() {
             continue
         fi
         
-        # Lấy giới hạn dữ liệu
+        # Lấy giới hạn dữ liệu từ cơ sở dữ liệu
         local limit=$(jq -r --arg username "$username" '.users[$username].limit' "$DATA_LIMIT_DB")
+        local unit=$(jq -r --arg username "$username" '.users[$username].unit // "GB"' "$DATA_LIMIT_DB")
+        limit="${limit}${unit}"
+        
+        # Chuyển đổi giới hạn sang GB nếu đơn vị là MB
+        local limit_gb=$limit
+        if [[ "$unit" == "MB" ]]; then
+            limit_gb=$(awk "BEGIN {printf \"%.2f\", $limit / 1024}")
+        fi
         
         # Lấy lượng dữ liệu đã sử dụng
         local usage=$(calculate_user_data_usage "$username")
         
+        # Chuyển đổi sang GB để so sánh
+        local usage_gb=$(awk "BEGIN {printf \"%.2f\", $usage / (1024*1024*1024)}")
+        
         # So sánh với giới hạn
-        if (( $(echo "$usage > $limit" | bc -l) )); then
+        if (( $(echo "$usage_gb > $limit_gb" | bc -l) )); then
             # Vượt quá giới hạn, tạm khóa tài khoản
-            warning_message "User $username đã sử dụng ${usage}GB, vượt quá giới hạn ${limit}GB"
+            warning_message "User $username đã sử dụng ${usage_gb}GB, vượt quá giới hạn ${limit_gb}GB"
             
             # Lấy UID của user
             local uid=$(id -u "$username")
@@ -268,15 +288,22 @@ show_data_usage() {
         # Lấy lượng dữ liệu đã sử dụng
         local usage=$(calculate_user_data_usage "$username")
         
+        # Chuyển đổi sang GB để hiển thị
+        local usage_gb=$(awk "BEGIN {printf \"%.2f\", $usage / (1024*1024*1024)}")
+        
         # Lấy giới hạn dữ liệu
         local limit="Không giới hạn"
         if jq -e ".users[\"$username\"]" "$DATA_LIMIT_DB" > /dev/null 2>&1; then
-            limit=$(jq -r --arg username "$username" '.users[$username].limit' "$DATA_LIMIT_DB")
-            limit="${limit}GB"
+            # Lấy giới hạn dữ liệu và đơn vị
+            local limit_value=$(jq -r --arg username "$username" '.users[$username].limit' "$DATA_LIMIT_DB")
+            local unit=$(jq -r --arg username "$username" '.users[$username].unit // "GB"' "$DATA_LIMIT_DB")
+            
+            # Hiển thị giới hạn với đơn vị
+            limit="${limit_value}${unit}"
         fi
         
         # Hiển thị thông tin
-        printf "%-20s %-15s %-15s\n" "$username" "${usage}GB" "$limit"
+        printf "%-20s %-15s %-15s\n" "$username" "${usage_gb}GB" "$limit"
     done
 }
 
@@ -316,20 +343,36 @@ change_data_limit() {
         return 2
     fi
     
-    # Lấy giới hạn dữ liệu mới
-    read -p "Nhập giới hạn dữ liệu mới (GB): " newlimit
+    # Lấy giới hạn dữ liệu mới và đơn vị
+    read -p "Nhập giới hạn dữ liệu mới: " newlimit
+    read -p "Nhập đơn vị (MB/GB, mặc định GB): " unit
     
-    # Kiểm tra giới hạn dữ liệu hợp lệ
-    if ! is_valid_number "$newlimit" 1; then
-        error_message "Giới hạn dữ liệu không hợp lệ"
+    # Nếu không nhập đơn vị, mặc định là GB
+    if [[ -z "$unit" ]]; then
+        unit="GB"
+    fi
+    
+    # Chuyển đơn vị về chữ hoa
+    unit=$(echo "$unit" | tr '[:lower:]' '[:upper:]')
+    
+    # Kiểm tra đơn vị hợp lệ
+    if [[ "$unit" != "MB" ]] && [[ "$unit" != "GB" ]]; then
+        error_message "Đơn vị không hợp lệ. Chỉ chấp nhận MB hoặc GB"
         pause
         return 3
     fi
     
-    # Thiết lập giới hạn dữ liệu mới
-    set_user_data_limit "$username" "$newlimit"
+    # Kiểm tra giới hạn dữ liệu hợp lệ
+    if ! is_valid_number "$newlimit" 0.1; then
+        error_message "Giới hạn dữ liệu không hợp lệ"
+        pause
+        return 4
+    fi
     
-    success_message "Đã thay đổi giới hạn dữ liệu thành ${newlimit}GB cho user $username"
+    # Thiết lập giới hạn dữ liệu mới
+    set_user_data_limit "$username" "$newlimit" "$unit"
+    
+    success_message "Đã thay đổi giới hạn dữ liệu thành ${newlimit}${unit} cho user $username"
     pause
 }
 
