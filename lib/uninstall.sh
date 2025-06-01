@@ -49,6 +49,18 @@ uninstall_dante() {
         warning_message "Không có proxy user nào"
     fi
     
+    # Xóa hoàn toàn file proxy_list.txt mà không cần xác nhận
+    if [[ -f "/etc/dante/proxy_list.txt" ]]; then
+        rm -f "/etc/dante/proxy_list.txt"
+        success_message "Đã xóa hoàn toàn file quản lý proxy /etc/dante/proxy_list.txt"
+    fi
+    
+    # Xóa thư mục dante nếu rỗng
+    if [[ -d "/etc/dante" ]] && [[ -z "$(ls -A /etc/dante 2>/dev/null)" ]]; then
+        rmdir "/etc/dante"
+        success_message "Đã xóa thư mục /etc/dante"
+    fi
+    
     success_message "Đã gỡ cài đặt Dante SOCKS5 proxy server thành công"
     pause
 }

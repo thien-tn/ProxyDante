@@ -325,15 +325,11 @@ delete_all_proxy_users() {
         remove_from_proxy_file "$user"
     done
     
+    # Tự động xóa nội dung file proxy_list.txt mà không cần xác nhận
+    > "$PROXY_FILE"
+    success_message "Đã tự động xóa nội dung file quản lý proxy"
+    
     success_message "Đã xóa toàn bộ proxy user"
-    
-    # Nếu muốn xóa hoàn toàn file proxy
-    read -p "Bạn có muốn xóa hoàn toàn file quản lý proxy? (y/n): " confirm_file
-    if [[ "$confirm_file" == "y" || "$confirm_file" == "Y" ]]; then
-        > "$PROXY_FILE"
-        success_message "Đã xóa nội dung file quản lý proxy"
-    fi
-    
     pause
 }
 
