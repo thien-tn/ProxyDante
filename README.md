@@ -133,7 +133,7 @@ ProxyDante/
 
 ```bash
 cd
-rm -r /ProxyDante
+rm -r ProxyDante
 ```
 
 ## Giấy phép
