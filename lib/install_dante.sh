@@ -12,6 +12,7 @@ install_dependencies() {
     
     if [[ "$OStype" == "debian" || "$OStype" == "ubuntu" ]]; then
         apt-get update
+        apt-get install build-essential gcc make
         apt-get install -y make gcc g++ wget curl zip unzip openssl libssl-dev pax-utils
     elif [[ "$OStype" == "centos" ]]; then
         yum -y update
