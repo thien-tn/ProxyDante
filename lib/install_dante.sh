@@ -275,6 +275,9 @@ install_dante_proxy() {
     # Tạo dịch vụ systemd
     create_service
     
+    # Mở port trong tường lửa (UFW, iptables, firewalld)
+    open_firewall_port "$port"
+    
     # Tạo proxy user ngẫu nhiên
     create_random_proxy "$numofproxy"
     

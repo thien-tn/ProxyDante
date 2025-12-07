@@ -145,17 +145,39 @@ is_port_in_use() {
 open_firewall_port() {
     local port=$1
     
-    # Kiểm tra và mở cổng với UFW
-    if command -v ufw >/dev/null 2>&1 && sudo ufw status | grep -q "Status: active"; then
-        sudo ufw allow "$port"/tcp
-        success_message "Đã mở cổng $port trong UFW."
+    info_message "Đang mở cổng $port trong tường lửa..."
+    
+    # Kiểm tra và mở cổng với UFW (CloudPanel và nhiều VPS sử dụng UFW)
+    if command -v ufw >/dev/null 2>&1; then
+        # Kiểm tra UFW có active không
+        if ufw status | grep -q "Status: active"; then
+            # Mở cổng TCP
+            ufw allow "$port"/tcp >/dev/null 2>&1
+            # Mở cổng UDP (cần cho SOCKS5 UDP ASSOCIATE)
+            ufw allow "$port"/udp >/dev/null 2>&1
+            success_message "Đã mở cổng $port (TCP+UDP) trong UFW."
+        else
+            info_message "UFW không active, bỏ qua."
+        fi
     fi
     
-    # Kiểm tra và mở cổng với iptables
+    # Kiểm tra và mở cổng với iptables (nếu không dùng UFW)
     if command -v iptables >/dev/null 2>&1; then
-        if ! sudo iptables -L | grep -q "ACCEPT.*tcp.*dpt:$port"; then
-            sudo iptables -A INPUT -p tcp --dport "$port" -j ACCEPT
-            success_message "Đã mở cổng $port trong iptables."
+        # Mở TCP nếu chưa có
+        if ! iptables -L INPUT -n | grep -q "dpt:$port"; then
+            iptables -A INPUT -p tcp --dport "$port" -j ACCEPT 2>/dev/null
+            iptables -A INPUT -p udp --dport "$port" -j ACCEPT 2>/dev/null
+            success_message "Đã mở cổng $port (TCP+UDP) trong iptables."
+        fi
+    fi
+    
+    # Kiểm tra và mở cổng với firewalld (CentOS/RHEL)
+    if command -v firewall-cmd >/dev/null 2>&1; then
+        if firewall-cmd --state 2>/dev/null | grep -q "running"; then
+            firewall-cmd --permanent --add-port="$port"/tcp >/dev/null 2>&1
+            firewall-cmd --permanent --add-port="$port"/udp >/dev/null 2>&1
+            firewall-cmd --reload >/dev/null 2>&1
+            success_message "Đã mở cổng $port (TCP+UDP) trong firewalld."
         fi
     fi
 }
