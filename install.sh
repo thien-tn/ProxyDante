@@ -20,7 +20,7 @@ source "$(dirname "$0")/lib/check_environment.sh"
 source "$(dirname "$0")/lib/install_dante.sh"
 source "$(dirname "$0")/lib/setup_service.sh"
 source "$(dirname "$0")/lib/user_management.sh"
-
+source "$(dirname "$0")/lib/limit_speed.sh"
 source "$(dirname "$0")/lib/uninstall.sh"
 
 # Hiển thị banner
@@ -48,13 +48,14 @@ show_main_menu() {
         echo -e "${CYAN}  4)${NC} Xóa một proxy user"
         echo -e "${CYAN}  5)${NC} Xóa toàn bộ proxy user"
         echo -e "${CYAN}  6)${NC} Xuất danh sách proxy"
-        echo -e "${CYAN}  7)${NC} Kiểm tra trạng thái dịch vụ"
-        echo -e "${CYAN}  8)${NC} Khởi động lại dịch vụ"
-        echo -e "${RED}  9)${NC} Xóa toàn bộ cấu hình server proxy & user"
-        echo -e "${CYAN} 10)${NC} Thoát"
+        echo -e "${CYAN}  7)${NC} Giới hạn băng thông (Bandwidth Limiting)"
+        echo -e "${CYAN}  8)${NC} Kiểm tra trạng thái dịch vụ"
+        echo -e "${CYAN}  9)${NC} Khởi động lại dịch vụ"
+        echo -e "${RED} 10)${NC} Xóa toàn bộ cấu hình server proxy & user"
+        echo -e "${CYAN} 11)${NC} Thoát"
         echo ""
         
-        read -p "Chọn một tùy chọn [1-10]: " option
+        read -p "Chọn một tùy chọn [1-11]: " option
         
         case $option in
             1) list_proxy_users ;;
@@ -63,10 +64,11 @@ show_main_menu() {
             4) delete_proxy_user ;;
             5) delete_all_proxy_users ;;
             6) export_proxy_list ;;
-            7) check_service_status ;;
-            8) restart_service ;;
-            9) uninstall_dante ;;
-            10) 
+            7) change_speed_limit ;;
+            8) check_service_status ;;
+            9) restart_service ;;
+            10) uninstall_dante ;;
+            11) 
                 echo "Đang thoát..."
                 exit 0 
                 ;;

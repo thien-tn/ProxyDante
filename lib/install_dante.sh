@@ -10,13 +10,13 @@
 install_dependencies() {
     info_message "Đang cài đặt các gói phụ thuộc..."
     
-    if [[ "$OStype" == "debian" || "$OStype" == "ubuntu" ]]; then
+    # Kiểm tra OStype: "deb" cho Debian/Ubuntu, "centos" cho CentOS/RHEL
+    if [[ "$OStype" == "deb" || "$OStype" == "debian" || "$OStype" == "ubuntu" ]]; then
         apt-get update
-        apt-get install build-essential gcc make
-        apt-get install -y make gcc g++ wget curl zip unzip openssl libssl-dev pax-utils
+        apt-get install -y make gcc g++ wget curl zip unzip openssl libssl-dev pax-utils iproute2
     elif [[ "$OStype" == "centos" ]]; then
         yum -y update
-        yum -y install make gcc wget curl zip unzip openssl openssl-devel pax-utils
+        yum -y install make gcc wget curl zip unzip openssl openssl-devel pax-utils iproute
     fi
     
     success_message "Đã cài đặt các gói phụ thuộc"

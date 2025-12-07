@@ -29,7 +29,7 @@ check_system_components() {
     info_message "Giao diện mạng: $interface"
     
     # Kiểm tra IP
-    local ip=$(get_ip)
+    local ip=$(get_server_ip)
     info_message "Địa chỉ IP: $ip"
     
     # Kiểm tra Dante đã cài đặt chưa

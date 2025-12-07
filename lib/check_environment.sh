@@ -27,6 +27,7 @@ check_bash() {
 # Phát hiện hệ điều hành
 detect_os() {
     if [[ -e /etc/debian_version ]]; then
+        # Sử dụng "deb" để tương thích với cả Debian và Ubuntu
         export OStype="deb"
         success_message "Phát hiện hệ điều hành: Debian/Ubuntu"
     elif [[ -e /etc/centos-release || -e /etc/redhat-release ]]; then
@@ -36,6 +37,11 @@ detect_os() {
         error_message "Script này chỉ hỗ trợ Debian, Ubuntu hoặc CentOS"
         exit 3
     fi
+}
+
+# Alias cho get_server_ip (tương thích ngược)
+get_ip() {
+    hostname -I | awk '{print $1}'
 }
 
 # Phát hiện giao diện mạng
